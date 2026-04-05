@@ -1,5 +1,4 @@
 import http from "http"
-import fetch from "node-fetch"
 
 const server = http.createServer(async (req, res) => {
   const host = req.headers.host
@@ -7,18 +6,35 @@ const server = http.createServer(async (req, res) => {
   let target = "https://example.com"
   let safe = "https://google.com"
 
-  const isBot = req.headers["user-agent"]?.includes("facebook")
+  const userAgent = req.headers["user-agent"] || ""
+
+  const isBot =
+    userAgent.includes("facebook") ||
+    userAgent.includes("bot") ||
+    userAgent.includes("crawler")
 
   const finalURL = isBot ? safe : target
 
   try {
-    const response = await fetch(finalURL)
-    const body = await response.text()
+    const response = await fetch(finalURL, {
+      method: "GET",
+      headers: {
+        "User-Agent": userAgent
+      }
+    })
 
-    res.writeHead(200, { "Content-Type": "text/html" })
+    const contentType = response.headers.get("content-type")
+
+    res.writeHead(200, {
+      "Content-Type": contentType || "text/html"
+    })
+
+    const body = await response.text()
     res.end(body)
+
   } catch (err) {
-    res.end("Error loading page")
+    console.log(err)
+    res.end("Proxy working but fetch failed")
   }
 })
 
