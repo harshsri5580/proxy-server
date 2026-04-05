@@ -1,27 +1,37 @@
 import http from "http"
 import fetch from "node-fetch"
 
-const server = http.createServer(async (req, res) => {
-  const userAgent = req.headers["user-agent"] || ""
+const campaigns = {
+  "go.rollroyale.com": {
+    offer: "https://httpbin.org/html",
+    safe: "https://google.com"
+  },
+  "go.test.com": {
+    offer: "https://example.com",
+    safe: "https://bing.com"
+  }
+}
 
-  let target = "https://httpbin.org/html"
-  let safe = "https://google.com"
+const server = http.createServer(async (req, res) => {
+  const host = req.headers.host
+
+  const userAgent = req.headers["user-agent"] || ""
 
   const isBot =
     userAgent.includes("facebook") ||
     userAgent.includes("bot") ||
     userAgent.includes("crawler")
 
-  const finalURL = isBot ? safe : target
+  const campaign = campaigns[host]
+
+  if (!campaign) {
+    return res.end("No campaign found")
+  }
+
+  const finalURL = isBot ? campaign.safe : campaign.offer
 
   try {
-    const response = await fetch(finalURL, {
-      method: "GET",
-      headers: {
-        "User-Agent": userAgent,
-        "Accept": "*/*"
-      }
-    })
+    const response = await fetch(finalURL)
 
     const body = await response.text()
 
@@ -32,11 +42,8 @@ const server = http.createServer(async (req, res) => {
     res.end(body)
 
   } catch (err) {
-    console.log("REAL ERROR:", err)
-    res.end("Still fetch error")
+    res.end("Fetch error")
   }
 })
 
-server.listen(3000, () => {
-  console.log("Server running on 3000")
-})
+server.listen(3000)
