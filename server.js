@@ -19,21 +19,23 @@ const server = http.createServer(async (req, res) => {
     const response = await fetch(finalURL, {
       method: "GET",
       headers: {
-        "User-Agent": userAgent
-      }
+        "User-Agent": userAgent,
+        "Accept": "*/*",
+        "Accept-Language": "en-US,en;q=0.9"
+      },
+      redirect: "follow" // 🔥 important
     })
 
-    const contentType = response.headers.get("content-type")
+    const buffer = await response.arrayBuffer()
 
-    res.writeHead(200, {
-      "Content-Type": contentType || "text/html"
+    res.writeHead(response.status, {
+      "Content-Type": response.headers.get("content-type") || "text/html"
     })
 
-    const body = await response.text()
-    res.end(body)
+    res.end(Buffer.from(buffer))
 
   } catch (err) {
-    console.log(err)
+    console.log("FETCH ERROR:", err.message)
     res.end("Proxy working but fetch failed")
   }
 })
