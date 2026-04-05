@@ -1,38 +1,34 @@
 import http from "http"
 import fetch from "node-fetch"
 
-const campaigns = {
-  "go.rollroyale.com": {
-    offer: "https://httpbin.org/html",
-    safe: "https://google.com"
-  },
-  "go.test.com": {
-    offer: "https://example.com",
-    safe: "https://bing.com"
-  }
-}
+// DEFAULT fallback (jab DB nahi hai)
+const DEFAULT_OFFER = "https://httpbin.org/html"
+const DEFAULT_SAFE = "https://google.com"
 
 const server = http.createServer(async (req, res) => {
-  const host = req.headers.host
+  const host = req.headers.host || ""
 
-  const userAgent = req.headers["user-agent"] || ""
+  const userAgent = (req.headers["user-agent"] || "").toLowerCase()
 
   const isBot =
     userAgent.includes("facebook") ||
     userAgent.includes("bot") ||
     userAgent.includes("crawler")
 
-  const campaign = campaigns[host]
+  // 👉 dynamic logic (future DB replace karega)
+  let offer = DEFAULT_OFFER
+  let safe = DEFAULT_SAFE
 
-  if (!campaign) {
-    return res.end("No campaign found")
+  // Example: subdomain based auto logic
+  if (host.includes("test")) {
+    offer = "https://example.com"
+    safe = "https://bing.com"
   }
 
-  const finalURL = isBot ? campaign.safe : campaign.offer
+  const finalURL = isBot ? safe : offer
 
   try {
     const response = await fetch(finalURL)
-
     const body = await response.text()
 
     res.writeHead(200, {
@@ -46,4 +42,7 @@ const server = http.createServer(async (req, res) => {
   }
 })
 
-server.listen(3000)
+const PORT = process.env.PORT || 3000
+server.listen(PORT, () => {
+  console.log("Server running on port", PORT)
+})
