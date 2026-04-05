@@ -1,12 +1,11 @@
 import http from "http"
+import fetch from "node-fetch"
 
 const server = http.createServer(async (req, res) => {
-  const host = req.headers.host
-
-  let target = "https://example.com"
-  let safe = "https://google.com"
-
   const userAgent = req.headers["user-agent"] || ""
+
+  let target = "https://httpbin.org/html"
+  let safe = "https://google.com"
 
   const isBot =
     userAgent.includes("facebook") ||
@@ -20,23 +19,21 @@ const server = http.createServer(async (req, res) => {
       method: "GET",
       headers: {
         "User-Agent": userAgent,
-        "Accept": "*/*",
-        "Accept-Language": "en-US,en;q=0.9"
-      },
-      redirect: "follow" // 🔥 important
+        "Accept": "*/*"
+      }
     })
 
-    const buffer = await response.arrayBuffer()
+    const body = await response.text()
 
-    res.writeHead(response.status, {
-      "Content-Type": response.headers.get("content-type") || "text/html"
+    res.writeHead(200, {
+      "Content-Type": "text/html"
     })
 
-    res.end(Buffer.from(buffer))
+    res.end(body)
 
   } catch (err) {
-    console.log("FETCH ERROR:", err.message)
-    res.end("Proxy working but fetch failed")
+    console.log("REAL ERROR:", err)
+    res.end("Still fetch error")
   }
 })
 
